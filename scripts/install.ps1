@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 
 $INSTALL_DIR = if ($env:LATIPM_INSTALL_DIR) { $env:LATIPM_INSTALL_DIR } else { "$HOME/.latipm" }
 $BIN_DIR = if ($env:LATIPM_BIN_DIR) { $env:LATIPM_BIN_DIR } else { "$INSTALL_DIR/bin" }
-$RELEASE_URL = "https://github.com/latipm/cli/releases/latest/download/latipm-cli.zip"
+$RELEASE_URL = "https://github.com/LatinoPackageManager/cli/releases/latest/download/latipm-cli.zip"
 $TMP_DIR = [System.IO.Path]::GetTempPath() + "latipm-install-" + [System.Guid]::NewGuid()
 
 function Write-Info { Write-Host "[INFO] $args" }

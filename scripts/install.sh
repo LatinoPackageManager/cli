@@ -5,7 +5,7 @@ set -e
 
 INSTALL_DIR="${LATIPM_INSTALL_DIR:-$HOME/.latipm}"
 BIN_DIR="${LATIPM_BIN_DIR:-$INSTALL_DIR/bin}"
-RELEASE_URL="https://github.com/latipm/cli/releases/latest/download/latipm-cli.zip"
+RELEASE_URL="https://github.com/LatinoPackageManager/cli/releases/latest/download/latipm-cli.zip"
 TMP_DIR="/tmp/latipm-install-$$"
 
 info() { echo "[INFO] $*"; }
