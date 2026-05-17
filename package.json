@@ -10,7 +10,8 @@
         "dev": "bun run src/cli.ts",
         "link": "bun link",
         "install:global": "bun link",
-        "install": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1"
+        "install:win": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
+        "install:unix": "bash scripts/install.sh"
     },
     "dependencies": {
         "adm-zip": "^0.5.12",
