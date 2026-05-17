@@ -45,16 +45,16 @@ try {
     Expand-Archive -Path $ZIP_FILE -DestinationPath $TMP_DIR -Force
     
     Write-Info "Copiando CLI a $BIN_DIR..."
-    Copy-Item -Path "$TMP_DIR\src\cli.ts" -Destination "$BIN_DIR\lpm.ts" -Force
-    Copy-Item -Path "$TMP_DIR\src\cli.ts" -Destination "$BIN_DIR\latipm.ts" -Force
+    Copy-Item -Path "$TMP_DIR\cli.js" -Destination "$BIN_DIR\lpm.js" -Force
+    Copy-Item -Path "$TMP_DIR\cli.js" -Destination "$BIN_DIR\latipm.js" -Force
     
     if ($IsWindows -or $env:OS -eq "Windows_NT") {
-        $WRAPPER_LPM = "@echo off`nbun run `"$BIN_DIR\lpm.ts`" %*`n"
-        $WRAPPER_LATIPM = "@echo off`nbun run `"$BIN_DIR\latipm.ts`" %*`n"
+        $WRAPPER_LPM = "@echo off`nbun run `"$BIN_DIR\lpm.js`" %*`n"
+        $WRAPPER_LATIPM = "@echo off`nbun run `"$BIN_DIR\latipm.js`" %*`n"
         $WRAPPER_LPM | Out-File -FilePath "$BIN_DIR\lpm.cmd" -Encoding ASCII
         $WRAPPER_LATIPM | Out-File -FilePath "$BIN_DIR\latipm.cmd" -Encoding ASCII
     } else {
-        $WRAPPER = "#!/bin/sh`nbun run `"$BIN_DIR/lpm.ts`" `"`$@`"`n"
+        $WRAPPER = "#!/bin/sh`nbun run `"$BIN_DIR/lpm.js`" `"`$@`"`n"
         $WRAPPER | Out-File -FilePath "$BIN_DIR/lpm" -Encoding ASCII
         chmod +x "$BIN_DIR/lpm"
         $WRAPPER | Out-File -FilePath "$BIN_DIR/latipm" -Encoding ASCII

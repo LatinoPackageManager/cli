@@ -46,18 +46,18 @@ info "Extrayendo archivos..."
 unzip -q "$ZIP_FILE" -d "$TMP_DIR"
 
 info "Copiando CLI a $BIN_DIR..."
-cp "$TMP_DIR/src/cli.ts" "$BIN_DIR/lpm.ts"
-cp "$TMP_DIR/src/cli.ts" "$BIN_DIR/latipm.ts"
+cp "$TMP_DIR/cli.js" "$BIN_DIR/lpm.js"
+cp "$TMP_DIR/cli.js" "$BIN_DIR/latipm.js"
 
 cat > "$BIN_DIR/lpm" << 'WRAPPER'
 #!/bin/sh
-bun run "$(dirname "$0")/lpm.ts" "$@"
+bun run "$(dirname "$0")/lpm.js" "$@"
 WRAPPER
 chmod +x "$BIN_DIR/lpm"
 
 cat > "$BIN_DIR/latipm" << 'WRAPPER'
 #!/bin/sh
-bun run "$(dirname "$0")/latipm.ts" "$@"
+bun run "$(dirname "$0")/latipm.js" "$@"
 WRAPPER
 chmod +x "$BIN_DIR/latipm"
 
