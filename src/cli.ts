@@ -100,7 +100,7 @@ async function saveLock(lock: Lockfile) {
 }
 
 function normalizeRegistry(url: string) {
-    return url.replace(/\/$/, "");
+    return url.replace(/\/$/, "").replace(/^=/, "");
 }
 
 function normalizeDependencies(value: unknown): Record<string, string> {
@@ -131,8 +131,9 @@ async function http<T = unknown>(url: string, opts: RequestInit = {}): Promise<T
 }
 
 async function download(url: string, outPath: string, expectedSha?: string) {
-    console.log(`Descargando ${url}...`);
-    const res = await fetch(url);
+    const cleanUrl = url.replace(/^=/, "");
+    console.log(`Descargando ${cleanUrl}...`);
+    const res = await fetch(cleanUrl);
     if (!res.ok) throw new Error(`Descarga fallo: ${res.status} ${res.statusText}`);
     await mkdir(path.dirname(outPath), { recursive: true });
     const buffer = Buffer.from(await res.arrayBuffer());
@@ -327,9 +328,19 @@ async function cmdAdd(spec: string, registryOverride?: string) {
     await cmdInstall(registryOverride);
 }
 
-async function cmdInstall(registryOverride?: string) {
+async function cmdInstall(arg?: string, registryOverride?: string) {
     const cfg = await loadConfig();
     const mf = await loadManifest();
+    
+    if (arg && arg !== mf.registry) {
+        const { name, range } = parseSpec(arg);
+        mf.dependencies = normalizeDependencies(mf.dependencies);
+        mf.registry ||= cfg.registry;
+        mf.dependencies[name] = range;
+        await saveManifest(mf);
+        console.log(`OK dependencia ${name}@${range}`);
+    }
+    
     const registry = normalizeRegistry(registryOverride || mf.registry || cfg.registry);
     const rootDeps = normalizeDependencies(mf.dependencies);
 
@@ -438,7 +449,7 @@ Comandos:
   whoami
   i <name[@range]>          alias de add
   add <name[@range]>
-  install [registry]
+  install [name[@range]] [registry]
   publish [dir]
   update [name]
   tree
@@ -471,7 +482,7 @@ const [, , cmd, ...rest] = process.argv;
                 await cmdAdd(rest[0]!, rest[1]);
                 break;
             case "install":
-                await cmdInstall(rest[0]);
+                await cmdInstall(rest[0], rest[1]);
                 break;
             case "publish":
                 await cmdPublish(rest[0]);
