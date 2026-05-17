@@ -46,8 +46,8 @@ info "Extrayendo archivos..."
 unzip -q "$ZIP_FILE" -d "$TMP_DIR"
 
 info "Copiando CLI a $BIN_DIR..."
-cp "$TMP_DIR/cli.ts" "$BIN_DIR/lpm.ts"
-cp "$TMP_DIR/cli.ts" "$BIN_DIR/latipm.ts"
+cp "$TMP_DIR/src/cli.ts" "$BIN_DIR/lpm.ts"
+cp "$TMP_DIR/src/cli.ts" "$BIN_DIR/latipm.ts"
 
 cat > "$BIN_DIR/lpm" << 'WRAPPER'
 #!/bin/sh

@@ -45,8 +45,8 @@ try {
     Expand-Archive -Path $ZIP_FILE -DestinationPath $TMP_DIR -Force
     
     Write-Info "Copiando CLI a $BIN_DIR..."
-    Copy-Item -Path "$TMP_DIR\cli.ts" -Destination "$BIN_DIR\lpm.ts" -Force
-    Copy-Item -Path "$TMP_DIR\cli.ts" -Destination "$BIN_DIR\latipm.ts" -Force
+    Copy-Item -Path "$TMP_DIR\src\cli.ts" -Destination "$BIN_DIR\lpm.ts" -Force
+    Copy-Item -Path "$TMP_DIR\src\cli.ts" -Destination "$BIN_DIR\latipm.ts" -Force
     
     if ($IsWindows -or $env:OS -eq "Windows_NT") {
         $WRAPPER_LPM = "@echo off`nbun run `"$BIN_DIR\lpm.ts`" %*`n"
