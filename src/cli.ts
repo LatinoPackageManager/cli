@@ -156,6 +156,20 @@ function unzip(zipPath: string, destDir: string) {
     zip.extractAllTo(destDir, true);
 }
 
+async function untar(tarPath: string, destDir: string) {
+    await mkdir(destDir, { recursive: true });
+    execSync(`tar -xzf "${tarPath}" -C "${destDir}"`);
+}
+
+async function createTarball(entryDir: string, files: string[], outPath: string) {
+    await mkdir(path.dirname(outPath), { recursive: true });
+    const args = ["-czf", outPath, "-C", entryDir];
+    for (const file of files) {
+        args.push(file);
+    }
+    execSync(`tar ${args.join(" ")}`);
+}
+
 async function getIgnoreFilter(entryDir: string) {
     const ig = ignore();
     const gitignorePath = path.join(entryDir, ".gitignore");
@@ -269,10 +283,16 @@ async function solveDependencies(registry: string, rootDeps: Record<string, stri
 async function installPackage(pkg: ResolvedPackage) {
     const dest = path.join(MODULES_DIR, pkg.name);
     await rm(dest, { recursive: true, force: true });
-    const tmpZip = path.join(CACHE_DIR, `${pkg.name}-${pkg.version}.zip`);
-    await download(pkg.dist.tarball, tmpZip, pkg.dist.shasum);
+    const isTarball = pkg.dist.tarball.endsWith(".tar.gz") || pkg.dist.tarball.endsWith(".tgz");
+    const ext = isTarball ? ".tar.gz" : ".zip";
+    const tmpFile = path.join(CACHE_DIR, `${pkg.name}-${pkg.version}${ext}`);
+    await download(pkg.dist.tarball, tmpFile, pkg.dist.shasum);
     await mkdir(dest, { recursive: true });
-    unzip(tmpZip, dest);
+    if (isTarball) {
+        await untar(tmpFile, dest);
+    } else {
+        unzip(tmpFile, dest);
+    }
     console.log(`OK ${pkg.name}@${pkg.version} instalado en ${dest}`);
 }
 
@@ -379,24 +399,21 @@ async function cmdPublish(entryDir = ".") {
     if (!pkg.name || !pkg.version) throw new Error(`${MANIFEST} requiere name y version`);
     pkg.dependencies = normalizeDependencies(pkg.dependencies);
 
-    const zipName = `${pkg.name}-${pkg.version}.zip`;
-    const zipPath = path.join(CACHE_DIR, zipName);
-    await mkdir(path.dirname(zipPath), { recursive: true });
+    const tarName = `${pkg.name}-${pkg.version}.tar.gz`;
+    const tarPath = path.join(CACHE_DIR, tarName);
+    await mkdir(path.dirname(tarPath), { recursive: true });
 
     const ig = await getIgnoreFilter(entryDir);
     const files = await getFilesToZip(entryDir, ig);
-    const zip = new AdmZip();
-    for (const file of files) {
-        zip.addLocalFile(path.join(entryDir, file), path.dirname(file));
-    }
-    zip.writeZip(zipPath);
+    await createTarball(entryDir, files, tarPath);
 
-    const buf = await readFile(zipPath);
+    const buf = await readFile(tarPath);
     const shasum = crypto.createHash("sha256").update(buf).digest("hex");
     const form = new FormData();
     form.append("meta", JSON.stringify(pkg));
-    form.append("file", new File([buf], zipName, { type: "application/zip" }));
+    form.append("file", new File([buf], tarName, { type: "application/gzip" }));
     form.append("sha256", shasum);
+    form.append("format", "tarball");
 
     const res = await fetch(`${cfg.registry}/v1/packages/${pkg.name}/${pkg.version}`, {
         method: "POST",
