@@ -4,11 +4,13 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import AdmZip from "adm-zip";
 import semver from "semver";
 import ignore from "ignore";
 import fs from "node:fs";
+import { execSync } from "node:child_process";
 
 const HOME = process.env.HOME || process.env.USERPROFILE || ".";
 const CONFIG_DIR = path.join(HOME, ".latipm");
@@ -18,6 +20,11 @@ const LOCKFILE = "latino.lock.json";
 const MODULES_DIR = "latino_modules";
 const CACHE_DIR = ".latipm-cache";
 const DEFAULT_REGISTRY = "https://registry-lpm.mdcdev.me";
+
+const PACKAGE_JSON = JSON.parse(
+    fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json"), "utf8")
+);
+const CLI_VERSION = PACKAGE_JSON.version;
 
 type Manifest = {
     name: string;
@@ -438,29 +445,176 @@ async function cmdWhy(name: string) {
     console.log(`dependencias: ${Object.keys(pkg.dependencies).join(", ") || "(ninguna)"}`);
 }
 
-function printHelp() {
-    console.log(`lpm <comando>
+function cmdVersion() {
+    console.log(`lpm v${CLI_VERSION}`);
+}
+
+async function cmdSelfUpdate() {
+    console.log("Buscando actualizaciones...");
+    try {
+        const res = await fetch("https://registry.npmjs.org/latipm-cli/latest");
+        if (!res.ok) throw new Error("No se pudo verificar la versión más reciente");
+        const data = await res.json();
+        const latestVersion = data.version;
+        
+        if (semver.eq(latestVersion, CLI_VERSION)) {
+            console.log(`Ya tienes la última versión: v${CLI_VERSION}`);
+            return;
+        }
+        
+        console.log(`Nueva versión disponible: v${latestVersion} (tienes v${CLI_VERSION})`);
+        console.log("Actualizando...");
+        
+        const isNpmGlobal = existsSync(path.join(process.execPath, "..", "node_modules", "latipm-cli"));
+        
+        if (isNpmGlobal) {
+            execSync("npm install -g latipm-cli", { stdio: "inherit" });
+        } else {
+            execSync("bun add -g latipm-cli", { stdio: "inherit" });
+        }
+        
+        console.log(`¡Actualizado a v${latestVersion}!`);
+    } catch (e: any) {
+        throw new Error(`Fallo la actualización: ${e.message}`);
+    }
+}
+
+function printHelp(cmd?: string) {
+    if (cmd) {
+        switch (cmd) {
+            case "init":
+                console.log(`lpm init [name] [version]
+  Crea un nuevo proyecto Latino
+
+  Argumentos:
+    name     Nombre del paquete (opcional, usa el nombre del directorio)
+    version  Versión inicial (default: 0.1.0)`);
+                break;
+            case "set-registry":
+                console.log(`lpm set-registry <url>
+  Configura el registry a usar
+
+  Argumentos:
+    url  URL del registry (ej: https://registry-lpm.mdcdev.me)`);
+                break;
+            case "login":
+                console.log(`lpm login <email> <password>
+  Inicia sesión en el registry
+
+  Argumentos:
+    email     Tu correo electrónico
+    password  Tu contraseña`);
+                break;
+            case "logout":
+                console.log(`lpm logout
+  Cierra la sesión actual`);
+                break;
+            case "whoami":
+                console.log(`lpm whoami
+  Muestra el usuario autenticado actualmente`);
+                break;
+            case "i":
+            case "add":
+                console.log(`lpm add <package[@version]>
+  Agrega una dependencia al proyecto
+
+  Argumentos:
+    package  Nombre del paquete (ej: red@1.0.0 o red)`);
+                break;
+            case "install":
+                console.log(`lpm install [package[@version]] [registry]
+  Instala las dependencias del proyecto
+
+  Argumentos:
+    package  Paquete específico a instalar (opcional)
+    registry URL del registry (opcional)`);
+                break;
+            case "publish":
+                console.log(`lpm publish [directory]
+  Publica un paquete en el registry
+
+  Argumentos:
+    directory  Directorio del paquete (default: .)`);
+                break;
+            case "update":
+                console.log(`lpm update [package]
+  Actualiza las dependencias del proyecto
+
+  Argumentos:
+    package  Nombre del paquete a actualizar (opcional)`);
+                break;
+            case "tree":
+                console.log(`lpm tree
+  Muestra el árbol de dependencias instaladas`);
+                break;
+            case "why":
+                console.log(`lpm why <package>
+  Explica por qué un paquete está instalado
+
+  Argumentos:
+    package  Nombre del paquete`);
+                break;
+            case "help":
+                console.log(`lpm help [command]
+  Muestra ayuda sobre los comandos
+
+  Argumentos:
+    command  Nombre del comando (opcional, muestra ayuda general si no se proporciona)`);
+                break;
+            case "version":
+                console.log(`lpm version
+  Muestra la versión del CLI`);
+                break;
+            case "self-update":
+                console.log(`lpm self-update
+  Actualiza el CLI a la última versión disponible`);
+                break;
+            default:
+                console.log(`Comando '${cmd}' no encontrado`);
+        }
+        return;
+    }
+
+    console.log(`Latino Package Manager (lpm) v${CLI_VERSION}
+
+Uso: lpm <comando> [argumentos]
 
 Comandos:
-  init [name] [version]
-  set-registry <url>
-  login <email> <password>
-  logout
-  whoami
-  i <name[@range]>          alias de add
-  add <name[@range]>
-  install [name[@range]] [registry]
-  publish [dir]
-  update [name]
-  tree
-  why <name>
-`);
+  init [name] [version]       Crea un nuevo proyecto
+  set-registry <url>          Configura el registry
+  login <email> <password>    Inicia sesión
+  logout                      Cierra sesión
+  whoami                      Muestra usuario actual
+  i <package>                 Alias de add
+  add <package[@version]>     Agrega dependencia
+  install [package] [reg]     Instala dependencias
+  publish [dir]               Publica paquete
+  update [package]            Actualiza dependencias
+  tree                        Muestra árbol de dependencias
+  why <package>               Explica por qué está instalado un paquete
+  help [command]              Muestra ayuda
+  version                     Muestra versión del CLI
+  self-update                 Actualiza el CLI
+
+Ejecuta 'lpm help <comando>' para más información sobre un comando específico.`);
 }
 
 const [, , cmd, ...rest] = process.argv;
 
+const validCommands = [
+    "init", "set-registry", "login", "logout", "whoami",
+    "i", "add", "install", "publish", "update", "tree", "why",
+    "help", "version", "self-update",
+    "h", "-h", "--help", "-v", "--version"
+];
+
 (async () => {
     try {
+        if (!cmd || !validCommands.includes(cmd)) {
+            printHelp();
+            return;
+        }
+
         switch (cmd) {
             case "init":
                 await cmdInit(rest[0], rest[1]);
@@ -496,8 +650,20 @@ const [, , cmd, ...rest] = process.argv;
             case "why":
                 await cmdWhy(rest[0]!);
                 break;
-            default:
-                printHelp();
+            case "help":
+            case "h":
+            case "-h":
+            case "--help":
+                printHelp(rest[0]);
+                break;
+            case "version":
+            case "-v":
+            case "--version":
+                cmdVersion();
+                break;
+            case "self-update":
+                await cmdSelfUpdate();
+                break;
         }
     } catch (e: any) {
         console.error("ERROR", e.message);

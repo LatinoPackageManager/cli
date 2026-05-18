@@ -48,6 +48,7 @@ unzip -q "$ZIP_FILE" -d "$TMP_DIR"
 info "Copiando CLI a $BIN_DIR..."
 cp "$TMP_DIR/cli.js" "$BIN_DIR/lpm.js"
 cp "$TMP_DIR/cli.js" "$BIN_DIR/latipm.js"
+cp "$TMP_DIR/cli.js" "$BIN_DIR/latinopm.js"
 
 cat > "$BIN_DIR/lpm" << 'WRAPPER'
 #!/bin/sh
@@ -60,6 +61,12 @@ cat > "$BIN_DIR/latipm" << 'WRAPPER'
 bun run "$(dirname "$0")/latipm.js" "$@"
 WRAPPER
 chmod +x "$BIN_DIR/latipm"
+
+cat > "$BIN_DIR/latinopm" << 'WRAPPER'
+#!/bin/sh
+bun run "$(dirname "$0")/latinopm.js" "$@"
+WRAPPER
+chmod +x "$BIN_DIR/latinopm"
 
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     info "Agregando $BIN_DIR al PATH..."

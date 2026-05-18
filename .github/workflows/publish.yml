@@ -1,26 +1,45 @@
-name: Publish
+name: Publish to npm
 
 on:
+  release:
+    types: [published]
   push:
     tags:
-      - 'v*'
+      - v*
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install Bun
+      - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          registry-url: https://registry.npmjs.org/
+          cache: npm
+
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@11.5.1
+
       - name: Install dependencies
         run: bun install
 
-      - name: Build
+      - name: Publish package
+        run: npm publish --provenance --access public
+
+      - name: Build for releases
         run: bun build src/cli.ts --outdir dist --target bun --minify
 
       - name: Create zip archive

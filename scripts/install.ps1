@@ -47,18 +47,23 @@ try {
     Write-Info "Copiando CLI a $BIN_DIR..."
     Copy-Item -Path "$TMP_DIR\cli.js" -Destination "$BIN_DIR\lpm.js" -Force
     Copy-Item -Path "$TMP_DIR\cli.js" -Destination "$BIN_DIR\latipm.js" -Force
+    Copy-Item -Path "$TMP_DIR\cli.js" -Destination "$BIN_DIR\latinopm.js" -Force
     
     if ($IsWindows -or $env:OS -eq "Windows_NT") {
         $WRAPPER_LPM = "@echo off`nbun run `"$BIN_DIR\lpm.js`" %*`n"
         $WRAPPER_LATIPM = "@echo off`nbun run `"$BIN_DIR\latipm.js`" %*`n"
+        $WRAPPER_LATINOPM = "@echo off`nbun run `"$BIN_DIR\latinopm.js`" %*`n"
         $WRAPPER_LPM | Out-File -FilePath "$BIN_DIR\lpm.cmd" -Encoding ASCII
         $WRAPPER_LATIPM | Out-File -FilePath "$BIN_DIR\latipm.cmd" -Encoding ASCII
+        $WRAPPER_LATINOPM | Out-File -FilePath "$BIN_DIR\latinopm.cmd" -Encoding ASCII
     } else {
         $WRAPPER = "#!/bin/sh`nbun run `"$BIN_DIR/lpm.js`" `"`$@`"`n"
         $WRAPPER | Out-File -FilePath "$BIN_DIR/lpm" -Encoding ASCII
         chmod +x "$BIN_DIR/lpm"
         $WRAPPER | Out-File -FilePath "$BIN_DIR/latipm" -Encoding ASCII
         chmod +x "$BIN_DIR/latipm"
+        $WRAPPER | Out-File -FilePath "$BIN_DIR/latinopm" -Encoding ASCII
+        chmod +x "$BIN_DIR/latinopm"
     }
     
     $CURRENT_PATH = [System.Environment]::GetEnvironmentVariable("Path", "User")

@@ -1,17 +1,36 @@
 {
     "name": "latipm-cli",
-    "version": "0.1.0",
+    "version": "0.2.0",
+    "description": "Latino Package Manager - CLI para gestionar paquetes en español latino",
     "type": "module",
+    "main": "src/cli.ts",
     "bin": {
         "lpm": "src/cli.ts",
-        "latipm": "src/cli.ts"
+        "latipm": "src/cli.ts",
+        "latinopm": "src/cli.ts"
     },
+    "files": [
+        "src"
+    ],
     "scripts": {
         "dev": "bun run src/cli.ts",
         "link": "bun link",
         "install:global": "bun link",
         "install:win": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
         "install:unix": "bash scripts/install.sh"
+    },
+    "keywords": [
+        "latino",
+        "package-manager",
+        "cli",
+        "spanish",
+        "latam"
+    ],
+    "author": "",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/LatinoPackageManager/cli.git"
     },
     "dependencies": {
         "adm-zip": "^0.5.12",
