@@ -1,6 +1,6 @@
 {
     "name": "latipm-cli",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "Latino Package Manager - CLI para gestionar paquetes en latino",
     "type": "module",
     "main": "src/cli.ts",
