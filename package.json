@@ -1,6 +1,6 @@
 {
     "name": "latipm-cli",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "description": "Latino Package Manager - CLI para gestionar paquetes en latino",
     "type": "module",
     "main": "src/cli.ts",
@@ -26,8 +26,8 @@
         "spanish",
         "latam"
     ],
-    "author": "",
-    "license": "G",
+    "author": "MDCDEV",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/LatinoPackageManager/cli.git"
