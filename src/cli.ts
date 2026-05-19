@@ -25,6 +25,7 @@ const PACKAGE_JSON = JSON.parse(
     fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json"), "utf8")
 );
 const CLI_VERSION = PACKAGE_JSON.version;
+const USER_AGENT = `latipm/${CLI_VERSION} (${process.platform}-${process.arch}) Node/${process.versions.node}`;
 
 type Manifest = {
     name: string;
@@ -129,7 +130,11 @@ function parseSpec(spec: string): { name: string; range: string } {
 }
 
 async function http<T = unknown>(url: string, opts: RequestInit = {}): Promise<T> {
-    const res = await fetch(url, opts);
+    const headers: HeadersInit = {
+        "User-Agent": USER_AGENT,
+        ...opts.headers,
+    };
+    const res = await fetch(url, { ...opts, headers });
     if (!res.ok) {
         const body = await res.text().catch(() => "");
         throw new Error(`${res.status} ${res.statusText}${body ? `: ${body}` : ""}`);
@@ -140,7 +145,9 @@ async function http<T = unknown>(url: string, opts: RequestInit = {}): Promise<T
 async function download(url: string, outPath: string, expectedSha?: string) {
     const cleanUrl = url.replace(/^=/, "");
     console.log(`Descargando ${cleanUrl}...`);
-    const res = await fetch(cleanUrl);
+    const res = await fetch(cleanUrl, {
+        headers: { "User-Agent": USER_AGENT },
+    });
     if (!res.ok) throw new Error(`Descarga fallo: ${res.status} ${res.statusText}`);
     await mkdir(path.dirname(outPath), { recursive: true });
     const buffer = Buffer.from(await res.arrayBuffer());
@@ -280,13 +287,14 @@ async function solveDependencies(registry: string, rootDeps: Record<string, stri
     return finalPackages;
 }
 
-async function installPackage(pkg: ResolvedPackage) {
+async function installPackage(registry: string, pkg: ResolvedPackage) {
     const dest = path.join(MODULES_DIR, pkg.name);
     await rm(dest, { recursive: true, force: true });
     const isTarball = pkg.dist.tarball.endsWith(".tar.gz") || pkg.dist.tarball.endsWith(".tgz");
     const ext = isTarball ? ".tar.gz" : ".zip";
     const tmpFile = path.join(CACHE_DIR, `${pkg.name}-${pkg.version}${ext}`);
-    await download(pkg.dist.tarball, tmpFile, pkg.dist.shasum);
+    const downloadUrl = `${registry}/v1/download/${encodeURIComponent(pkg.name)}/${encodeURIComponent(pkg.version)}`;
+    await download(downloadUrl, tmpFile, pkg.dist.shasum);
     await mkdir(dest, { recursive: true });
     if (isTarball) {
         await untar(tmpFile, dest);
@@ -374,7 +382,7 @@ async function cmdInstall(arg?: string, registryOverride?: string) {
     await mkdir(MODULES_DIR, { recursive: true });
     const packages = await solveDependencies(registry, rootDeps);
     for (const pkg of Object.values(packages)) {
-        await installPackage(pkg);
+        await installPackage(registry, pkg);
     }
 
     await saveLock({
@@ -417,7 +425,10 @@ async function cmdPublish(entryDir = ".") {
 
     const res = await fetch(`${cfg.registry}/v1/packages/${pkg.name}/${pkg.version}`, {
         method: "POST",
-        headers: { authorization: `Bearer ${cfg.token}` },
+        headers: { 
+            authorization: `Bearer ${cfg.token}`,
+            "User-Agent": USER_AGENT,
+        },
         body: form,
     });
     if (!res.ok) throw new Error(`Publish fallo: ${res.status} ${await res.text()}`);
